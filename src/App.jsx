@@ -66,14 +66,14 @@ export default function App() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
           <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
             <h2 className="text-lg font-bold text-orange-600 mb-4 flex items-center gap-2">
-              <ShoppingBag className="w-5 h-5" /> Shopee Audit Engine
+              <Box className="w-5 h-5" /> Shopee Audit Engine
             </h2>
             <ShopeeUploader onProcess={handleShopeeUpload} />
           </div>
 
           <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
             <h2 className="text-lg font-bold text-blue-600 mb-4 flex items-center gap-2">
-              <Box className="w-5 h-5" /> Lazada Financial Audit
+              <Box className="w-5 h-5" /> Lazada Audit Engine
             </h2>
             <LazadaUploader onProcess={handleLazadaUpload} />
           </div>
