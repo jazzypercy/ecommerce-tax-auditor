@@ -7,9 +7,10 @@ import { exportToExcel } from './utils/exportToExcel';
 import { exportToDisputeExcel } from './utils/exportToDispute';
 import LazadaUploader from './components/LazadaUploader';
 import ShopeeUploader from './components/ShopeeUploader';
-import InfoBar from './components/InfoBar';
+import InfoModal from './components/InfoModal';
 
 export default function App() {
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [shopeeData, setShopeeData] = useState(null);
   const [lazadaData, setLazadaData] = useState(null);
   const [warehouseLog, setWarehouseLog] = useState(null);
@@ -126,19 +127,29 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800 font-sans antialiased">
-      <nav className="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between">
+      {/* Pop-up Modal Component */}
+      <InfoModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
+
+      <nav className="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between sticky top-0 z-40 shadow-sm">
         <div className="flex items-center gap-2">
-          <Shield className="w-6 h-6 text-orange-600" />
+          <Shield className="w-6 h-6 text-orange-600" /> {/* Kept your theme orange-600 here */}
           <span className="font-bold text-xl tracking-tight">Profit Guard PH</span>
         </div>
+        
+        {/* NEW: Guide & Instructions Button */}
+        <button 
+          onClick={() => setIsModalOpen(true)}
+          className="flex items-center gap-2 bg-blue-50 text-blue-700 px-4 py-2 rounded-full text-sm font-semibold hover:bg-blue-100 transition-colors"
+        >
+          <Info className="w-4 h-4" />
+          How to Use Guide
+        </button>
       </nav>
 
       <main className="max-w-6xl mx-auto p-6 md:p-8">
         <div className="flex items-center justify-between mb-8">
             <h1 className="text-3xl font-extrabold text-slate-900">Leakage & Overcharge Audit</h1>
         </div>
-
-        <InfoBar />
 
         <div className="flex items-center justify-between mb-8">
             <label className="flex items-center gap-2 bg-white px-4 py-2 rounded-lg border border-slate-200 shadow-sm cursor-pointer hover:bg-slate-50">
