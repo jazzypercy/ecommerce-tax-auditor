@@ -1,4 +1,5 @@
 import Papa from 'papaparse';
+import { cleanCurrency } from './parserUtils';
 
 export const parseShopeeFile = (file) => {
   return new Promise((resolve, reject) => {
@@ -6,21 +7,28 @@ export const parseShopeeFile = (file) => {
       header: true,
       skipEmptyLines: true,
       complete: (results) => {
+        // 1. Check for critical parsing errors
+        if (results.errors.length > 0) {
+          reject(new Error(`CSV Parse Error: ${results.errors[0].message}`));
+          return;
+        }
+
+        // 2. Map data with sanitization
         const extracted = results.data.map(row => {
-          const gross = parseFloat(row['Product Price Paid by Buyer'] || row['Deal Price'] || 0);
+          const gross = cleanCurrency(row['Product Price Paid by Buyer'] || row['Deal Price']);
           
-          // Combine standard platform deductions
-          const commFee = parseFloat(row['Commission Fee'] || 0);
-          const serviceFee = parseFloat(row['Service Fee'] || 0);
-          const transFee = parseFloat(row['Transaction Fee'] || 0);
+          // Clean the fees
+          const commFee = cleanCurrency(row['Commission Fee']);
+          const serviceFee = cleanCurrency(row['Service Fee']);
+          const transFee = cleanCurrency(row['Transaction Fee']);
           const totalFees = commFee + serviceFee + transFee;
           
           return {
             orderId: row['Order ID'] || 'N/A',
             productName: row['Product Name'] || 'Unknown Item',
-            buyerPaidShipping: parseFloat(row['Shipping Fee Paid by Buyer'] || 0),
-            estimatedShipping: parseFloat(row['Estimated Shipping Fee'] || 0),
-            sellerPaidShipping: parseFloat(row['Seller Absorbed Shipping Fee'] || row['Actual Shipping Fee'] || 0),
+            buyerPaidShipping: cleanCurrency(row['Shipping Fee Paid by Buyer']),
+            estimatedShipping: cleanCurrency(row['Estimated Shipping Fee']),
+            sellerPaidShipping: cleanCurrency(row['Seller Absorbed Shipping Fee'] || row['Actual Shipping Fee']),
             status: row['Order Status'] || 'N/A',
             grossSales: gross,
             totalFees: totalFees,

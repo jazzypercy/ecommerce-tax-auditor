@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Shield, ShoppingBag, Box, Download, AlertTriangle, ClipboardList, FileSpreadsheet } from 'lucide-react';
+import { Shield, ShoppingBag, Box, Download, AlertTriangle, ClipboardList, FileSpreadsheet, Info } from 'lucide-react';
 import Papa from 'papaparse';
 import { parseLazadaSingleFile } from './utils/lazadaParser';
 import { parseShopeeFile } from './utils/shopeeParser';
