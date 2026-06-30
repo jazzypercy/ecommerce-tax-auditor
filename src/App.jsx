@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Shield, ShoppingBag, Box, Download, AlertTriangle, ClipboardList, FileSpreadsheet, Info } from 'lucide-react';
+import { Shield, Box, Download, AlertTriangle, ClipboardList, FileSpreadsheet, Info } from 'lucide-react';
 import Papa from 'papaparse';
 import { parseLazadaSingleFile } from './utils/lazadaParser';
 import { parseShopeeFile } from './utils/shopeeParser';
@@ -8,6 +8,7 @@ import { exportToDisputeExcel } from './utils/exportToDispute';
 import LazadaUploader from './components/LazadaUploader';
 import ShopeeUploader from './components/ShopeeUploader';
 import InfoModal from './components/InfoModal';
+import { reconcile } from './utils/reconciler';
 
 export default function App() {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -21,6 +22,7 @@ export default function App() {
   const [rtsLeakage, setRtsLeakage] = useState([]);
   const [commissionCreep, setCommissionCreep] = useState([]);
   const [includeTax, setIncludeTax] = useState(false);
+  const [reconciliationResults, setReconciliationResults] = useState([]);
 
   // --- POLYMORPHIC INPUT EXTRACTOR ---
   // Safely handles either raw File objects or standard HTML browser Events
@@ -91,7 +93,7 @@ export default function App() {
       setRtsLeakage([]);
       setCommissionCreep([]);
     }
-
+    
     // 2. Cross-Match Discrepancies with Warehouse Logs
     if (!warehouseLog || warehouseLog.length === 0) {
       setLostReturns([]);
@@ -123,6 +125,17 @@ export default function App() {
 
     setLostReturns(crossMatch);
 
+  }, [shopeeData, lazadaData, warehouseLog]);
+
+  useEffect(() => {
+    // Combine both platform datasets defensively
+    const combined = [
+      ...(shopeeData ?? []),
+      ...(lazadaData ?? []),
+    ];
+
+    const results = reconcile(combined, warehouseLog ?? []);
+    setReconciliationResults(results);
   }, [shopeeData, lazadaData, warehouseLog]);
 
   return (
@@ -162,14 +175,14 @@ export default function App() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
             <h2 className="text-lg font-bold text-orange-600 mb-4 flex items-center gap-2">
-              <ShoppingBag className="w-5 h-5" /> 1. Shopee Orders
+              <Box className="w-5 h-5" /> 1. Shopee CSV Statement
             </h2>
             <ShopeeUploader onProcess={handleShopeeUpload} />
           </div>
 
           <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
             <h2 className="text-lg font-bold text-blue-600 mb-4 flex items-center gap-2">
-              <Box className="w-5 h-5" /> 2. Lazada Statement
+              <Box className="w-5 h-5" /> 2. Lazada CSV Statement
             </h2>
             <LazadaUploader onProcess={handleLazadaUpload} />
           </div>
@@ -314,6 +327,61 @@ export default function App() {
                         </tr>
                     ))}</tbody>
                 </table>
+            </div>
+          </div>
+        )}
+
+        {reconciliationResults.length > 0 && (
+          <div className="bg-white rounded-xl border-l-4 border-l-rose-600 border border-slate-200 shadow-sm p-6 mb-8">
+            <div className="mb-4">
+              <h3 className="font-bold text-lg text-rose-900 flex items-center gap-2">
+                <AlertTriangle className="w-5 h-5 text-rose-600" />
+                Reconciliation Flags ({reconciliationResults.length})
+              </h3>
+              <p className="text-sm text-slate-500 mt-1">
+                Orders marked <strong>Delivered</strong> by the platform but missing or mismatched in your warehouse log.
+              </p>
+            </div>
+
+            <div className="overflow-x-auto max-h-72 overflow-y-auto border border-slate-100 rounded-lg">
+              <table className="w-full text-sm" role="table" aria-label="Reconciliation discrepancies">
+                <thead>
+                  <tr className="text-left bg-rose-50 border-b border-rose-100">
+                    <th className="p-2 font-semibold text-rose-800">Order ID</th>
+                    <th className="p-2 font-semibold text-rose-800">Platform</th>
+                    <th className="p-2 font-semibold text-rose-800">Platform Status</th>
+                    <th className="p-2 font-semibold text-rose-800">Warehouse Status</th>
+                    <th className="p-2 font-semibold text-rose-800">Flag</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {reconciliationResults.map((row) => (
+                    <tr key={`${row.orderId}-${row.discrepancyType}`} className="border-b hover:bg-rose-50 transition-colors">
+                      <td className="p-2 font-mono text-xs">{row.orderId}</td>
+                      <td className="p-2 text-xs">
+                        <span className={`px-2 py-0.5 rounded text-xs font-semibold ${
+                          row.platform === 'Shopee'
+                            ? 'bg-orange-50 text-orange-700'
+                            : 'bg-blue-50 text-blue-700'
+                        }`}>
+                          {row.platform ?? '—'}
+                        </span>
+                      </td>
+                      <td className="p-2 text-xs text-slate-600 capitalize">{row.status}</td>
+                      <td className="p-2 text-xs text-slate-600 capitalize">{row.warehouseStatus}</td>
+                      <td className="p-2">
+                        <span className={`px-2 py-0.5 rounded text-xs font-bold ${
+                          row.discrepancyType === 'LOST_INVENTORY'
+                            ? 'bg-rose-100 text-rose-700'
+                            : 'bg-amber-100 text-amber-700'
+                        }`}>
+                          {row.discrepancyType === 'LOST_INVENTORY' ? '⚠ Lost Inventory' : '↩ Return Mismatch'}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </div>
         )}
