@@ -9,6 +9,7 @@ import LazadaUploader from './components/LazadaUploader';
 import ShopeeUploader from './components/ShopeeUploader';
 import InfoModal from './components/InfoModal';
 import { reconcile } from './utils/reconciler';
+const [showWarehouseLog, setShowWarehouseLog] = useState(false);
 
 export default function App() {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -187,19 +188,39 @@ export default function App() {
             <LazadaUploader onProcess={handleLazadaUpload} />
           </div>
 
-          <div className="bg-white p-6 rounded-xl border-dashed border-2 border-slate-300 shadow-sm bg-slate-50/50">
-            <h2 className="text-lg font-bold text-purple-700 mb-4 flex items-center gap-2">
-              <ClipboardList className="w-5 h-5" /> 3. Warehouse Return Log
-            </h2>
-            <input 
-              type="file" 
-              accept=".csv" 
-              onChange={handleWarehouseLogUpload}
-              className="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100 cursor-pointer"
-            />
-            <p className="text-xs text-slate-500 mt-2">Upload your clean CSV containing a column titled "Order ID" to verify receiving.</p>
+          <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-bold text-purple-700 flex items-center gap-2">
+                <ClipboardList className="w-5 h-5" /> 3. Warehouse Return Log
+              </h2>
+              <button
+                onClick={() => setShowWarehouseLog(!showWarehouseLog)}
+                className={`text-xs font-semibold px-3 py-1 rounded-full transition-colors ${
+                  showWarehouseLog
+                    ? 'bg-purple-100 text-purple-700 hover:bg-purple-200'
+                    : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
+                }`}
+              >
+                {showWarehouseLog ? 'Enabled ✓' : 'Enable'}
+              </button>
+            </div>
+
+            {showWarehouseLog && (
+              <div className="border-t border-slate-100 pt-4">
+                <input
+                  type="file"
+                  accept=".csv"
+                  onChange={handleWarehouseLogUpload}
+                  className="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100 cursor-pointer"
+                />
+                <p className="text-xs text-slate-500 mt-2">Upload your clean CSV containing a column titled "Order ID" to verify receiving.</p>
+              </div>
+            )}
+
+            {!showWarehouseLog && (
+              <p className="text-xs text-slate-400 italic">Enable to cross-match returns against your warehouse inbound log.</p>
+            )}
           </div>
-        </div>
 
         {/* LEAKAGE MODULE 1: Lost Return Tracker Results */}
         {lostReturns.length > 0 && (
